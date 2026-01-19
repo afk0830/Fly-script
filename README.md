@@ -1,2 +1,0 @@
-# Fly-script
-panel fly

@@ -1,0 +1,221 @@
+loadstring([==[
+--// FLY HUB PREMIUM LADO ESQUERDO + SOM LOCAL FUNCIONAL
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- FUNCAO PARA CRIAR FLY NO PERSONAGEM
+local function setupFly(char)
+    local hum = char:WaitForChild("Humanoid")
+    local root = char:WaitForChild("HumanoidRootPart")
+    local fly = false
+    local speed = 100 -- Velocidade inicial 100
+    local bv, bg
+
+   -- GUI
+   local G = LocalPlayer:WaitForChild("PlayerGui")
+    if G:FindFirstChild("FlyGui") then G.FlyGui:Destroy() end
+    local gui = Instance.new("ScreenGui", G)
+    gui.Name = "FlyGui"
+    gui.ResetOnSpawn = false
+
+   local f = Instance.new("Frame", gui)
+  f.Size = UDim2.fromOffset(260,220)
+    f.Position = UDim2.fromScale(0,0.5)
+    f.AnchorPoint = Vector2.new(0,0.5)
+    f.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    f.BorderSizePixel = 0
+    f.Active = true
+    f.Draggable = true
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0,18)
+
+   -- SOM LOCAL DO BOTAO ON/OFF
+  local clickSound = Instance.new("Sound")
+   clickSound.Name = "FlyClickSound"
+  clickSound.SoundId = "rbxassetid://9119119889" -- EXEMPLO: som de meme público (substitua se quiser)
+    clickSound.Volume = 1
+  clickSound.Parent = f
+
+   -- BORDAS COM SOMBRA
+   local shadow = Instance.new("UIStroke", f)
+    shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+  shadow.LineJoinMode = Enum.LineJoinMode.Round
+    shadow.Thickness = 4
+    shadow.Transparency = 0.7
+   shadow.Color = Color3.fromRGB(0,0,0)
+    
+   -- HEADER
+    local header = Instance.new("Frame", f)
+    header.Size = UDim2.new(1,0,0,40)
+    header.BackgroundTransparency = 1
+    local title = Instance.new("TextLabel", header)
+    title.Size = UDim2.new(1,-80,1,0)
+    title.Position = UDim2.fromOffset(10,0)
+    title.BackgroundTransparency = 1
+    title.Text = "FLY HUB PREMIUM"
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 26
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.TextColor3 = Color3.new(1,1,1)
+
+   local function createBtn(txt,pos,color)
+        local b = Instance.new("TextButton", header)
+        b.Size = UDim2.fromOffset(30,30)
+        b.Position = UDim2.fromOffset(pos,5)
+        b.Text = txt
+        b.Font = Enum.Font.GothamBold
+        b.TextColor3 = Color3.new(1,1,1)
+        b.BackgroundColor3 = color
+        Instance.new("UICorner", b).CornerRadius = UDim.new(1,0)
+        local grad = Instance.new("UIGradient",b)
+        grad.Rotation = 45
+        grad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0,color),ColorSequenceKeypoint.new(1,color)}
+        return b, grad
+    end
+
+  local mini, gradMini = createBtn("-",180,Color3.fromRGB(100,100,100))
+    local close, gradClose = createBtn("X",215,Color3.fromRGB(200,50,50))
+
+   -- CONTENT
+    local content = Instance.new("Frame", f)
+    content.Position = UDim2.fromOffset(0,40)
+    content.Size = UDim2.new(1,0,1,-40)
+    content.BackgroundTransparency = 1
+
+  local sLabel = Instance.new("TextLabel", content)
+    sLabel.Size = UDim2.new(1,0,0,70)
+    sLabel.Position = UDim2.fromOffset(0,10)
+    sLabel.BackgroundTransparency = 1
+    sLabel.Text = speed
+    sLabel.Font = Enum.Font.GothamBlack
+    sLabel.TextSize = 48
+    sLabel.TextColor3 = Color3.fromRGB(255,255,255)
+
+   -- BOTAO ON/OFF COM SOM LOCAL
+    local on = Instance.new("TextButton", content)
+    on.Size = UDim2.fromOffset(200,45)
+    on.Position = UDim2.fromOffset(30,85)
+    on.Text = "OFF"
+    on.Font = Enum.Font.GothamBold
+    on.TextSize = 22
+    on.TextColor3 = Color3.fromRGB(255,255,255)
+    on.BackgroundColor3 = Color3.fromRGB(180,50,50)
+    Instance.new("UICorner", on)
+    local gradOn = Instance.new("UIGradient", on)
+    gradOn.Rotation = 45
+    gradOn.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(60,180,90)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180,60,60))
+    }
+
+   -- BOTOES + / -
+    local function actionBtn(txt,x,color)
+        local b = Instance.new("TextButton", content)
+        b.Size = UDim2.fromOffset(80,45)
+        b.Position = UDim2.fromOffset(x,135)
+        b.Text = txt
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 26
+        b.TextColor3 = Color3.fromRGB(255,255,255)
+        b.BackgroundColor3 = color
+        Instance.new("UICorner", b)
+        local grad = Instance.new("UIGradient",b)
+        grad.Rotation = 45
+        grad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0,color),ColorSequenceKeypoint.new(1,color)}
+        return b, grad
+    end
+
+   local plus, gradPlus = actionBtn("+",30,Color3.fromRGB(60,180,90))
+   local minus, gradMinus = actionBtn("-",150,Color3.fromRGB(180,60,60))
+
+  local by = Instance.new("TextLabel", content)
+    by.Size = UDim2.new(1,0,0,20)
+    by.Position = UDim2.fromOffset(0,190)
+    by.BackgroundTransparency = 1
+    by.Text = "BY afk0830"
+    by.Font = Enum.Font.GothamBold
+    by.TextSize = 14
+    by.TextColor3 = Color3.fromRGB(255,255,255)
+
+   -- GRADIENT RAINBOW CONTINUO
+    task.spawn(function()
+        local h=0
+        while gui.Parent do
+            h=(h+0.003)%1
+            gradOn.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromHSV((h+0.1)%1,1,1)),
+                ColorSequenceKeypoint.new(1, Color3.fromHSV((h+0.6)%1,1,1))
+            }
+            sLabel.TextColor3 = Color3.fromHSV((h+0.3)%1,1,1)
+            by.TextColor3 = Color3.fromHSV((h+0.6)%1,1,1)
+            task.wait()
+        end
+    end)
+
+  -- ANIMACAO DE CLIQUE
+    local function pop(btn)
+        TweenService:Create(btn,TweenInfo.new(0.1),{Size=btn.Size-UDim2.fromOffset(4,4)}):Play()
+        task.wait(0.1)
+        TweenService:Create(btn,TweenInfo.new(0.1),{Size=btn.Size+UDim2.fromOffset(4,4)}):Play()
+    end
+
+  -- FLY
+    local function startFly()
+        if fly then return end
+        fly=true
+        hum.PlatformStand=true
+        bv=Instance.new("BodyVelocity",root)
+        bv.MaxForce=Vector3.new(9e9,9e9,9e9)
+        bv.Velocity=Vector3.zero
+        bg=Instance.new("BodyGyro",root)
+        bg.MaxTorque=Vector3.new(9e9,9e9,9e9)
+        bg.P=3000
+        RunService:BindToRenderStep("Fly",0,function()
+            local dir=Vector3.zero
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir+=Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir-=Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir-=Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir+=Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.E) then dir+=Vector3.yAxis end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Q) then dir-=Vector3.yAxis end
+            bv.Velocity = dir*speed
+            bg.CFrame = CFrame.lookAt(root.Position, root.Position+Camera.CFrame.LookVector)
+        end)
+    end
+
+  local function stopFly()
+    fly=false
+        RunService:UnbindFromRenderStep("Fly")
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
+        hum.PlatformStand=false
+    end
+
+  -- BOTAO ON/OFF
+    on.MouseButton1Click:Connect(function()
+        clickSound:Play()
+        pop(on)
+        if fly then stopFly() on.Text="OFF" on.BackgroundColor3=Color3.fromRGB(180,50,50)
+        else startFly() on.Text="ON" on.BackgroundColor3=Color3.fromRGB(60,180,90) end
+    end)
+
+   plus.MouseButton1Click:Connect(function() pop(plus) speed+=10 sLabel.Text=speed end)
+    minus.MouseButton1Click:Connect(function() pop(minus) speed=math.max(10,speed-10) sLabel.Text=speed end)
+    mini.MouseButton1Click:Connect(function()
+        local minimized=not minimized content.Visible=not minimized
+        TweenService:Create(f,TweenInfo.new(0.2),{Size=minimized and UDim2.fromOffset(260,40) or UDim2.fromOffset(260,220)}):Play()
+        mini.Text=minimized and "+" or "-"
+    end)
+    close.MouseButton1Click:Connect(function() pop(close) stopFly() gui:Destroy() end)
+
+  -- REAPLICA FLY QUANDO RESPAWN
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        setupFly(char)
+    end)
+end
+
+setupFly(LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
+]==])()
